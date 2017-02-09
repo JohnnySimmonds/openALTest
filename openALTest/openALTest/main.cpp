@@ -28,10 +28,6 @@ int main()
 {
 	// Initialization
 	
-	
-	
-
-
 	/*Open a device(In this case the default device)*/
 	ALCdevice* Device; // select the "preferred device"
 	Device = alcOpenDevice(nullptr);
@@ -109,11 +105,10 @@ int main()
 	/*Loading an audio stream to a buffer*/
 
 	ALenum format;
-	//ALvoid *data;
-	//ALuint frequency;
 	ALboolean loop = AL_FALSE;
-	wavFile wav = openWavFile("C:\\Users\\Johnny\\Documents\\Visual Studio 2015\\Projects\\openALTest\\openALTest\\test.wav");
-
+	wavFile wav = openWavFile("test.wav");
+	
+	
 	if (wav.bitsPerSample == 8)
 	{
 		if (wav.channels == 1)
@@ -128,7 +123,8 @@ int main()
 		else if (wav.channels == 2)
 			format = AL_FORMAT_STEREO16;
 	}
-
+	
+	//format = wav.formatType;
 	alBufferData(buffer, format, (ALvoid*)wav.buf, (ALsizei)wav.dataSize, (ALsizei)wav.sampleRate);
 	checkError();
 
@@ -168,13 +164,14 @@ wavFile openWavFile(char* fileName)
 	DWORD sampleRate, avgBytesPerSec;
 	short bytesPerSample, bitsPerSample;
 	DWORD dataSize;
+	unsigned char* buf;
 
 	FILE *fp = nullptr;
 	fopen_s(&fp, fileName, "rb");
 	
 	
 	fread(type, sizeof(char), 4, fp);
-	if (type[0] != 'R' || type[1] != 'I' || type[3] != 'F' || type[3] != 'F')
+	if (type[0] != 'R' || type[1] != 'I' || type[2] != 'F' || type[3] != 'F')
 	{
 		cout << "RIFF PRINT OUT: " << type[0] << type[1] << type[2] << type[3] << endl;
 		cout << "No RIFF" << endl;
@@ -184,7 +181,7 @@ wavFile openWavFile(char* fileName)
 	fread(&size, sizeof(DWORD), 1, fp);
 	
 	fread(type, sizeof(char), 4, fp);
-	if (type[0] != 'W' || type[1] != 'A' || type[3] != 'V' || type[3] != 'E')
+	if (type[0] != 'W' || type[1] != 'A' || type[2] != 'V' || type[3] != 'E')
 	{
 		cout << "WAVE PRINT OUT: " << type[0] << type[1] << type[2] << type[3] << endl;
 		cout << "Not a WAVE" << endl;
@@ -193,7 +190,7 @@ wavFile openWavFile(char* fileName)
 
 	fread(type, sizeof(char), 4, fp);
 	
-	if (type[0] != 'f' || type[1] != 'm' || type[3] != 't' || type[3] != ' ')
+	if (type[0] != 'f' || type[1] != 'm' || type[2] != 't' || type[3] != ' ')
 	{
 		cout << "FMT PRINT OUT: " << type[0] << type[1] << type[2] << type[3] << endl;
 		cout << "No fmt " << endl;
@@ -209,7 +206,7 @@ wavFile openWavFile(char* fileName)
 	fread(&bitsPerSample, sizeof(short), 1, fp);
 
 	fread(type, sizeof(char), 4, fp);
-	if (type[0] != 'd' || type[1] != 'a' || type[3] != 't' || type[3] != 'a')
+	if (type[0] != 'd' || type[1] != 'a' || type[2] != 't' || type[3] != 'a')
 	{
 		cout << "DATA PRINT OUT: " << type[0] << type[1] << type[2] << type[3] << endl;
 		cout << "No DATA" << endl;
@@ -218,8 +215,8 @@ wavFile openWavFile(char* fileName)
 	
 	fread(&dataSize, sizeof(DWORD), 1, fp);
 
-	wav.buf = new unsigned char[dataSize];
-	fread(wav.buf, sizeof(BYTE), dataSize, fp);
+	buf = new unsigned char[dataSize];
+	fread(buf, sizeof(BYTE), dataSize, fp);
 
 	wav.size = size;
 	wav.chunkSize = chunkSize;
@@ -228,12 +225,13 @@ wavFile openWavFile(char* fileName)
 	wav.sampleRate = sampleRate;
 	wav.avgBytesPerSec = avgBytesPerSec;
 	wav.bytesPerSample = bytesPerSample;
-	wav.bitsPerSample = bytesPerSample;
+	wav.bitsPerSample = bitsPerSample;
 	wav.dataSize = dataSize;
-
+	wav.buf = buf;
 	return wav;
 
 }
+/*openAL apparently needs us to check for errors constantly, this just makes it easier*/
 void checkError()
 {
 	ALCenum error;
@@ -241,6 +239,7 @@ void checkError()
 	if (error != AL_NO_ERROR)
 		perror("error: ");
 }
+/*Probably not need just shows what audio devices are available*/
 static void list_audio_devices(const ALCchar *devices)
 {
 	const ALCchar *device = devices, *next = devices + 1;
