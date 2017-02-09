@@ -106,7 +106,7 @@ int main()
 
 	ALenum format;
 	ALboolean loop = AL_FALSE;
-	wavFile wav = openWavFile("test.wav");
+	wavFile wav = openWavFile("test2.wav");
 	
 	
 	if (wav.bitsPerSample == 8)
