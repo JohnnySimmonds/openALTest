@@ -10,7 +10,7 @@
 using namespace std;
 static void list_audio_devices(const ALCchar *devices);
 void checkError();
-
+ALuint sourceSetup(ALuint source);
 
 struct wavFile {
 
@@ -23,6 +23,7 @@ struct wavFile {
 	unsigned char* buf;
 
 };
+ALenum formatWav(wavFile wav);
 wavFile openWavFile(char* fileName);
 int main()
 {
@@ -76,11 +77,17 @@ int main()
 
 	/*Source Generation creating an audio source object which is the origin of the sound*/
 	ALuint source;
-
+	ALuint source2;
 
 	alGenSources(1, &source);
 	checkError();
 
+	alGenSources(1, &source2);
+	checkError();
+
+	source = sourceSetup(source);
+	source2 = sourceSetup(source2);
+	/*
 	alSourcef(source, AL_PITCH, 1);
 	checkError();
 
@@ -93,36 +100,30 @@ int main()
 	alSource3f(source, AL_VELOCITY, 0, 0, 0);
 	checkError();
 
-	alSourcei(source, AL_LOOPING, AL_FALSE);
+	alSourcei(source, AL_LOOPING, AL_TRUE);
 	checkError();
+	*/
 
 	/*Buffer Generation this holds the raw audio stream*/
 	ALuint buffer;
+	ALuint buffer2;
 
 	alGenBuffers(1, &buffer);
 	checkError();
 
+	alGenBuffers(1, &buffer2);
+	checkError();
+
 	/*Loading an audio stream to a buffer*/
 
-	ALenum format;
+	ALenum format, format2;
 	ALboolean loop = AL_FALSE;
 	wavFile wav = openWavFile("test2.wav");
+	wavFile wav2 = openWavFile("test.wav");
 	
-	
-	if (wav.bitsPerSample == 8)
-	{
-		if (wav.channels == 1)
-			format = AL_FORMAT_MONO8;
-		else if (wav.channels == 2)
-			format = AL_FORMAT_STEREO8;
-	}
-	if (wav.bitsPerSample == 16)
-	{
-		if (wav.channels == 1)
-			format = AL_FORMAT_MONO16;
-		else if (wav.channels == 2)
-			format = AL_FORMAT_STEREO16;
-	}
+	format = formatWav(wav);
+	format2 = formatWav(wav2);
+
 	
 	//format = wav.formatType;
 	alBufferData(buffer, format, (ALvoid*)wav.buf, (ALsizei)wav.dataSize, (ALsizei)wav.sampleRate);
@@ -132,7 +133,17 @@ int main()
 	checkError();
 
 	alSourcePlay(source);
+
+	alBufferData(buffer2, format, (ALvoid*)wav2.buf, (ALsizei)wav2.dataSize, (ALsizei)wav2.sampleRate);
+	checkError();
+
+	alSourcei(source2, AL_BUFFER, buffer2);
+	checkError();
+
+	alSourcePlay(source2);
 	
+	
+
 	ALint source_state;
 	alGetSourcei(source, AL_SOURCE_STATE, &source_state);
 	checkError();
@@ -152,6 +163,47 @@ int main()
 	
 	while (1);
 	return 0;
+}
+ALuint sourceSetup(ALuint source)
+{
+
+	alSourcef(source, AL_PITCH, 1);
+	checkError();
+
+	alSourcef(source, AL_GAIN, 1);
+	checkError();
+
+	alSource3f(source, AL_POSITION, 0, 0, 0);
+	checkError();
+
+	alSource3f(source, AL_VELOCITY, 0, 0, 0);
+	checkError();
+
+	alSourcei(source, AL_LOOPING, AL_TRUE);
+	checkError();
+
+	return source;
+}
+
+ALenum formatWav(wavFile wav)
+{
+	ALenum format;
+	if (wav.bitsPerSample == 8)
+	{
+		if (wav.channels == 1)
+			format = AL_FORMAT_MONO8;
+		else if (wav.channels == 2)
+			format = AL_FORMAT_STEREO8;
+	}
+	if (wav.bitsPerSample == 16)
+	{
+		if (wav.channels == 1)
+			format = AL_FORMAT_MONO16;
+		else if (wav.channels == 2)
+			format = AL_FORMAT_STEREO16;
+	}
+	return format;
+
 }
 /*Initializes the wav file to be read*/
 wavFile openWavFile(char* fileName)
